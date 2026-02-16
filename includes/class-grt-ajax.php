@@ -63,7 +63,7 @@ class GRT_Booking_AJAX {
 
 		if ( $is_available ) {
 			// Perform Booking
-			$inserted = GRT_Booking_DB::insert_availability( $check_in, $check_out, 'booked', $email, $phone, $adults, $children );
+			$inserted = GRT_Booking_DB::insert_availability( $check_in, $check_out, 'pending', $email, $phone, $adults, $children );
 
 			if ( $inserted ) {
 				$msg = isset( $options['msg_booked'] ) && ! empty( $options['msg_booked'] ) 

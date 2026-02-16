@@ -34,7 +34,7 @@ jQuery(document).ready(function($) {
                 // Jan 10 is usually available for checkout/new checkin.
                 
                 // Let's stick to the logic: If date >= start AND date < end, it is occupied.
-                if (range.status === 'booked') {
+                if (['booked', 'pending', 'confirmed', 'completed'].includes(range.status)) {
                      if (dateString >= range.start_date && dateString < range.end_date) {
                          isBooked = true;
                          break;

@@ -14,6 +14,7 @@ class GRT_Booking_Admin {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
 		add_action( 'admin_post_grt_add_availability', array( $this, 'handle_add_availability' ) );
 		add_action( 'admin_post_grt_delete_availability', array( $this, 'handle_delete_availability' ) );
+		add_action( 'admin_post_grt_update_booking_status', array( $this, 'handle_update_booking_status' ) );
 	}
 
 	/**
@@ -190,6 +191,8 @@ class GRT_Booking_Admin {
 				echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Availability added.', 'grt-booking' ) . '</p></div>';
 			} elseif ( 'deleted' === $_GET['message'] ) {
 				echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Availability deleted.', 'grt-booking' ) . '</p></div>';
+			} elseif ( 'updated' === $_GET['message'] ) {
+				echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Booking status updated.', 'grt-booking' ) . '</p></div>';
 			} elseif ( 'error' === $_GET['message'] ) {
 				echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'An error occurred.', 'grt-booking' ) . '</p></div>';
 			}
@@ -350,11 +353,56 @@ class GRT_Booking_Admin {
 				array( '%d' )
 			);
 			
-			wp_redirect( admin_url( 'admin.php?page=grt-booking&tab=availability&message=deleted' ) );
+			// Redirect back to the referring page (could be availability tab or date booked page)
+			$redirect_url = wp_get_referer();
+			if ( ! $redirect_url ) {
+				$redirect_url = admin_url( 'admin.php?page=grt-booking&tab=availability' );
+			}
+			
+			wp_redirect( add_query_arg( 'message', 'deleted', $redirect_url ) );
 			exit;
 		}
 
 		wp_redirect( admin_url( 'admin.php?page=grt-booking&tab=availability&message=error' ) );
+		exit;
+	}
+
+	/**
+	 * Handle Update Booking Status
+	 */
+	public function handle_update_booking_status() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( 'Unauthorized' );
+		}
+
+		check_admin_referer( 'grt_update_booking_status_nonce', 'grt_nonce' );
+
+		if ( isset( $_POST['id'], $_POST['status'] ) ) {
+			$id = absint( $_POST['id'] );
+			$status = sanitize_text_field( $_POST['status'] );
+			
+			// Validate status
+			$allowed_statuses = array( 'pending', 'confirmed', 'completed', 'cancelled', 'booked' );
+			if ( ! in_array( $status, $allowed_statuses ) ) {
+				wp_die( 'Invalid status' );
+			}
+
+			global $wpdb;
+			$table_name = $wpdb->prefix . 'grt_booking_availability';
+			
+			$wpdb->update(
+				$table_name,
+				array( 'status' => $status ),
+				array( 'id' => $id ),
+				array( '%s' ),
+				array( '%d' )
+			);
+			
+			wp_redirect( admin_url( 'admin.php?page=grt-booking-booked&message=updated' ) );
+			exit;
+		}
+
+		wp_redirect( admin_url( 'admin.php?page=grt-booking-booked&message=error' ) );
 		exit;
 	}
 
@@ -376,8 +424,8 @@ class GRT_Booking_Admin {
 				global $wpdb;
 				$table_name = $wpdb->prefix . 'grt_booking_availability';
 				
-				// Query for status = 'booked'
-				$results = $wpdb->get_results( "SELECT * FROM $table_name WHERE status = 'booked' ORDER BY start_date DESC" );
+				// Query for status != 'available'
+				$results = $wpdb->get_results( "SELECT * FROM $table_name WHERE status != 'available' ORDER BY start_date DESC" );
 
 				if ( $results ) {
 					foreach ( $results as $row ) {
@@ -402,10 +450,33 @@ class GRT_Booking_Admin {
 							</div>
 
 							<div class="grt-booked-status">
-								<?php esc_html_e( 'Status:', 'grt-booking' ); ?> 
-								<span class="grt-status-badge booked"><?php echo esc_html( ucfirst( $row->status ) ); ?></span>
+								<form action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post" style="display: flex; align-items: center; gap: 10px;">
+									<input type="hidden" name="action" value="grt_update_booking_status">
+									<input type="hidden" name="id" value="<?php echo esc_attr( $row->id ); ?>">
+									<?php wp_nonce_field( 'grt_update_booking_status_nonce', 'grt_nonce' ); ?>
+									
+									<label for="status-<?php echo $row->id; ?>"><strong><?php esc_html_e( 'Status:', 'grt-booking' ); ?></strong></label>
+									<select name="status" id="status-<?php echo $row->id; ?>">
+										<option value="pending" <?php selected( $row->status, 'pending' ); ?>><?php esc_html_e( 'Pending', 'grt-booking' ); ?></option>
+										<option value="confirmed" <?php selected( $row->status, 'confirmed' ); ?>><?php esc_html_e( 'Confirmed', 'grt-booking' ); ?></option>
+										<option value="completed" <?php selected( $row->status, 'completed' ); ?>><?php esc_html_e( 'Completed', 'grt-booking' ); ?></option>
+										<option value="cancelled" <?php selected( $row->status, 'cancelled' ); ?>><?php esc_html_e( 'Cancelled', 'grt-booking' ); ?></option>
+										<option value="booked" <?php selected( $row->status, 'booked' ); ?>><?php esc_html_e( 'Booked (Legacy)', 'grt-booking' ); ?></option>
+									</select>
+									<input type="submit" class="button button-small" value="<?php esc_attr_e( 'Update', 'grt-booking' ); ?>">
+								</form>
 							</div>
-							<div class="grt-booked-id">
+
+							<div class="grt-booked-actions" style="margin-top: 10px; text-align: right;">
+								<form action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post" style="display:inline;">
+									<input type="hidden" name="action" value="grt_delete_availability">
+									<input type="hidden" name="id" value="<?php echo esc_attr( $row->id ); ?>">
+									<?php wp_nonce_field( 'grt_delete_availability_nonce', 'grt_nonce' ); ?>
+									<input type="submit" class="button button-link-delete" value="<?php esc_attr_e( 'Remove', 'grt-booking' ); ?>" onclick="return confirm('<?php echo esc_js( __( 'Are you sure you want to remove this booking?', 'grt-booking' ) ); ?>');">
+								</form>
+							</div>
+							
+							<div class="grt-booked-id" style="font-size: 10px; color: #aaa; margin-top: 5px;">
 								ID: #<?php echo esc_html( $row->id ); ?>
 							</div>
 						</div>

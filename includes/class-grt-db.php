@@ -111,26 +111,14 @@ class GRT_Booking_DB {
 
 		// 2. Check if the range overlaps with any existing 'booked' slot.
 		// Overlap condition: (StartA <= EndB) and (EndA >= StartB)
+		// Statuses that block availability: 'booked', 'pending', 'confirmed', 'completed'
+		// Statuses that do NOT block: 'available', 'cancelled'
 		$query_booked = $wpdb->prepare(
 			"SELECT COUNT(*) FROM $table_name 
-			WHERE status = 'booked' 
+			WHERE status IN ('booked', 'pending', 'confirmed', 'completed') 
 			AND start_date < %s 
 			AND end_date > %s",
-			$check_out, // EndB (Requested End) - using strict inequality for check-out logic usually, but here dates are inclusive days?
-			// Usually hotel logic: Check-out date can be the Check-in date of next guest.
-			// If dates are "nights":
-			// Booking: Jan 1 to Jan 2 (1 night).
-			// If another booking is Jan 2 to Jan 3.
-			// Overlap check: 
-			// Existing: [Jan 1, Jan 2]
-			// New: [Jan 2, Jan 3]
-			// They overlap on Jan 2.
-			
-			// Let's stick to standard SQL overlap for inclusive dates:
-			// start_date <= check_out AND end_date >= check_in
-			// However, for hotels, if check_out is the day you leave, it's usually available for next check-in.
-			// So we usually compare: start_date < check_out AND end_date > check_in
-			
+			$check_out, 
 			$check_in
 		);
 		
