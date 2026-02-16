@@ -32,7 +32,7 @@ require_once GRT_BOOKING_PLUGIN_DIR . 'includes/class-grt-ajax.php';
 register_activation_hook( __FILE__, array( 'GRT_Booking_DB', 'install' ) );
 
 // Initialize Classes
-function run_grt_booking() {
+function grt_booking_run() {
 	// Admin
 	if ( is_admin() ) {
 		$plugin_admin = new GRT_Booking_Admin();
@@ -52,4 +52,4 @@ function run_grt_booking() {
 	$plugin_ajax = new GRT_Booking_AJAX();
 	$plugin_ajax->init();
 }
-add_action( 'plugins_loaded', 'run_grt_booking' );
+add_action( 'plugins_loaded', 'grt_booking_run' );

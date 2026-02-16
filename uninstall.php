@@ -9,10 +9,10 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 }
 
 global $wpdb;
-$table_name = $wpdb->prefix . 'grt_booking_availability';
+$grt_booking_table_name = $wpdb->prefix . 'grt_booking_availability';
 
 // Drop the table
-$wpdb->query( "DROP TABLE IF EXISTS $table_name" );
+$wpdb->query( "DROP TABLE IF EXISTS $grt_booking_table_name" );
 
 // Delete options
 delete_option( 'grt_booking_db_version' );

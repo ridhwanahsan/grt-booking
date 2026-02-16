@@ -3,6 +3,10 @@
  * AJAX Handler Class
  */
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 class GRT_Booking_AJAX {
 
 	/**
@@ -17,18 +21,15 @@ class GRT_Booking_AJAX {
 	 * Process Booking (formerly check_availability)
 	 */
 	public function process_booking() {
-		// Log for debugging
-		error_log( 'GRT Booking AJAX Triggered' );
-		
 		check_ajax_referer( 'grt_booking_nonce', 'security' );
 
 		// Validate inputs
-		$check_in  = isset( $_POST['check_in'] ) ? sanitize_text_field( $_POST['check_in'] ) : '';
-		$check_out = isset( $_POST['check_out'] ) ? sanitize_text_field( $_POST['check_out'] ) : '';
-		$adults    = isset( $_POST['adults'] ) ? absint( $_POST['adults'] ) : 1;
-		$children  = isset( $_POST['children'] ) ? absint( $_POST['children'] ) : 0;
-		$email     = isset( $_POST['email'] ) ? sanitize_email( $_POST['email'] ) : '';
-		$phone     = isset( $_POST['phone'] ) ? sanitize_text_field( $_POST['phone'] ) : '';
+		$check_in  = isset( $_POST['check_in'] ) ? sanitize_text_field( wp_unslash( $_POST['check_in'] ) ) : '';
+		$check_out = isset( $_POST['check_out'] ) ? sanitize_text_field( wp_unslash( $_POST['check_out'] ) ) : '';
+		$adults    = isset( $_POST['adults'] ) ? absint( wp_unslash( $_POST['adults'] ) ) : 1;
+		$children  = isset( $_POST['children'] ) ? absint( wp_unslash( $_POST['children'] ) ) : 0;
+		$email     = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : '';
+		$phone     = isset( $_POST['phone'] ) ? sanitize_text_field( wp_unslash( $_POST['phone'] ) ) : '';
 
 		if ( empty( $check_in ) || empty( $check_out ) ) {
 			wp_send_json_error( array( 'message' => __( 'Please select check-in and check-out dates.', 'grt-booking' ) ) );
@@ -51,10 +52,12 @@ class GRT_Booking_AJAX {
 		$nights = $interval->days;
 
 		if ( $nights < $min_stay ) {
+			/* translators: %d: Minimum number of nights */
 			wp_send_json_error( array( 'message' => sprintf( __( 'Minimum stay is %d nights.', 'grt-booking' ), $min_stay ) ) );
 		}
 
 		if ( $nights > $max_stay ) {
+			/* translators: %d: Maximum number of nights */
 			wp_send_json_error( array( 'message' => sprintf( __( 'Maximum stay is %d nights.', 'grt-booking' ), $max_stay ) ) );
 		}
 

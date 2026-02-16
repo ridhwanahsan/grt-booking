@@ -17,9 +17,14 @@ class GRT_Booking_Shortcode {
 	 * Register assets
 	 */
 	public function register_assets() {
+		// Only enqueue on front-end
+		if ( is_admin() ) {
+			return;
+		}
+
 		wp_register_style( 'grt-booking-css', GRT_BOOKING_PLUGIN_URL . 'assets/css/grt-booking.css', array(), GRT_BOOKING_VERSION );
 		// Register jQuery UI style
-		wp_register_style( 'jquery-ui-style', '//code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css' );
+		wp_register_style( 'jquery-ui-style', GRT_BOOKING_PLUGIN_URL . 'assets/css/jquery-ui.css', array(), '1.13.2' );
 		
 		wp_register_script( 'grt-booking-js', GRT_BOOKING_PLUGIN_URL . 'assets/js/grt-booking.js', array( 'jquery', 'jquery-ui-datepicker' ), GRT_BOOKING_VERSION, true );
 

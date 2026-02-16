@@ -26,7 +26,7 @@ class GRT_Booking_Admin {
 			return;
 		}
 		wp_enqueue_script( 'jquery-ui-datepicker' );
-		wp_enqueue_style( 'jquery-ui-style', '//code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css' );
+		wp_enqueue_style( 'jquery-ui-style', GRT_BOOKING_PLUGIN_URL . 'assets/css/jquery-ui.css', array(), '1.13.2' );
 		wp_enqueue_style( 'grt-admin-css', GRT_BOOKING_PLUGIN_URL . 'assets/css/admin.css', array(), GRT_BOOKING_VERSION );
 	}
 
@@ -183,17 +183,19 @@ class GRT_Booking_Admin {
 			return;
 		}
 
-		$active_tab = isset( $_GET['tab'] ) ? $_GET['tab'] : 'general';
+		$active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( wp_unslash( $_GET['tab'] ) ) : 'general';
 
 		// Handle messages
 		if ( isset( $_GET['message'] ) ) {
-			if ( 'added' === $_GET['message'] ) {
+			// No nonce check needed here as this is just displaying a message based on a URL parameter
+			$message = sanitize_text_field( wp_unslash( $_GET['message'] ) );
+			if ( 'added' === $message ) {
 				echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Availability added.', 'grt-booking' ) . '</p></div>';
-			} elseif ( 'deleted' === $_GET['message'] ) {
+			} elseif ( 'deleted' === $message ) {
 				echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Availability deleted.', 'grt-booking' ) . '</p></div>';
-			} elseif ( 'updated' === $_GET['message'] ) {
+			} elseif ( 'updated' === $message ) {
 				echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Booking status updated.', 'grt-booking' ) . '</p></div>';
-			} elseif ( 'error' === $_GET['message'] ) {
+			} elseif ( 'error' === $message ) {
 				echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'An error occurred.', 'grt-booking' ) . '</p></div>';
 			}
 		}
@@ -201,9 +203,7 @@ class GRT_Booking_Admin {
 		// DB Column Debug
 		global $wpdb;
 		$table_name = $wpdb->prefix . 'grt_booking_availability';
-		$cols = $wpdb->get_results( "DESCRIBE $table_name" );
-		// echo '<pre>'; print_r( $cols ); echo '</pre>';
-
+		
 		?>
 		<div class="wrap">
 			<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
@@ -266,6 +266,12 @@ class GRT_Booking_Admin {
 						<?php
 						global $wpdb;
 						$table_name = $wpdb->prefix . 'grt_booking_availability';
+						// Use prepare or specific query structure if needed, though this simple SELECT is generally safe.
+						// However, Plugin Check complains about unescaped $table_name.
+						// In WP, table names are not parameters for prepare(). They are trusted if built with $wpdb->prefix.
+						// To silence the warning, we can't do much as it's a false positive for table names,
+						// but ensuring $table_name is derived from $wpdb->prefix is the correct way.
+						
 						$results = $wpdb->get_results( "SELECT * FROM $table_name ORDER BY start_date DESC" );
 
 						if ( $results ) {
@@ -342,7 +348,7 @@ class GRT_Booking_Admin {
 		check_admin_referer( 'grt_delete_availability_nonce', 'grt_nonce' );
 
 		if ( isset( $_POST['id'] ) ) {
-			$id = absint( $_POST['id'] );
+			$id = absint( wp_unslash( $_POST['id'] ) );
 
 			global $wpdb;
 			$table_name = $wpdb->prefix . 'grt_booking_availability';
@@ -359,11 +365,11 @@ class GRT_Booking_Admin {
 				$redirect_url = admin_url( 'admin.php?page=grt-booking&tab=availability' );
 			}
 			
-			wp_redirect( add_query_arg( 'message', 'deleted', $redirect_url ) );
+			wp_safe_redirect( add_query_arg( 'message', 'deleted', $redirect_url ) );
 			exit;
 		}
 
-		wp_redirect( admin_url( 'admin.php?page=grt-booking&tab=availability&message=error' ) );
+		wp_safe_redirect( admin_url( 'admin.php?page=grt-booking&tab=availability&message=error' ) );
 		exit;
 	}
 
@@ -425,6 +431,7 @@ class GRT_Booking_Admin {
 				$table_name = $wpdb->prefix . 'grt_booking_availability';
 				
 				// Query for status != 'available'
+				// Ignoring "Unescaped parameter $table_name" warning as table names cannot be prepared.
 				$results = $wpdb->get_results( "SELECT * FROM $table_name WHERE status != 'available' ORDER BY start_date DESC" );
 
 				if ( $results ) {

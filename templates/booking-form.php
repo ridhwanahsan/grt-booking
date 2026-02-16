@@ -1,3 +1,8 @@
+<?php
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+?>
 <div class="grt-booking-container">
 	<h2 class="grt-booking-title"><?php esc_html_e( 'Reserve Your Room', 'grt-booking' ); ?></h2>
 	

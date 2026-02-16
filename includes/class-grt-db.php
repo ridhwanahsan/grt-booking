@@ -94,6 +94,7 @@ class GRT_Booking_DB {
 		$table_name = $wpdb->prefix . GRT_BOOKING_DB_TABLE;
 
 		// 1. Check if the range falls within an admin-defined 'available' slot.
+		// Use prepare() for values, table name is trusted.
 		$query_available = $wpdb->prepare(
 			"SELECT COUNT(*) FROM $table_name 
 			WHERE start_date <= %s 
@@ -136,11 +137,13 @@ class GRT_Booking_DB {
 
 	/**
 	 * Get all availability ranges.
+	 * Only returns public data (dates and status) to prevent PII leakage in frontend.
 	 */
 	public static function get_all_ranges() {
 		global $wpdb;
 		$table_name = $wpdb->prefix . GRT_BOOKING_DB_TABLE;
-		return $wpdb->get_results( "SELECT * FROM $table_name ORDER BY start_date ASC" );
+		// Ignoring "Direct database call" warning as per WP standard for custom tables.
+		return $wpdb->get_results( "SELECT start_date, end_date, status FROM $table_name ORDER BY start_date ASC" );
 	}
 
 	/**
@@ -149,6 +152,7 @@ class GRT_Booking_DB {
 	public static function delete_range( $id ) {
 		global $wpdb;
 		$table_name = $wpdb->prefix . GRT_BOOKING_DB_TABLE;
+		// Use wpdb->delete which handles preparation internally.
 		return $wpdb->delete( $table_name, array( 'id' => $id ), array( '%d' ) );
 	}
 }
