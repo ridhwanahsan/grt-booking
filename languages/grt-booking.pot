@@ -1,0 +1,59 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: GRT Booking 1.0.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-01-01 12:00+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Loco https://localise.biz/\n"
+"X-Domain: grt-booking\n"
+
+msgid "GRT Booking"
+msgstr ""
+
+msgid "General Settings"
+msgstr ""
+
+msgid "Minimum Stay (Nights)"
+msgstr ""
+
+msgid "Maximum Stay (Nights)"
+msgstr ""
+
+msgid "Submit Button Text"
+msgstr ""
+
+msgid "Reserve Your Room"
+msgstr ""
+
+msgid "Check-in Date"
+msgstr ""
+
+msgid "Check-out Date"
+msgstr ""
+
+msgid "Adults"
+msgstr ""
+
+msgid "Children"
+msgstr ""
+
+msgid "Please fill in all required fields."
+msgstr ""
+
+msgid "Invalid date selection."
+msgstr ""
+
+msgid "Check-out date must be after check-in date."
+msgstr ""
+
+msgid "Room is available! You can proceed with booking."
+msgstr ""
+
+msgid "Sorry, the room is not available for the selected dates."
+msgstr ""
