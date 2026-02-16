@@ -462,8 +462,8 @@ class GRT_Booking_Admin {
 									<input type="hidden" name="id" value="<?php echo esc_attr( $row->id ); ?>">
 									<?php wp_nonce_field( 'grt_update_booking_status_nonce', 'grt_nonce' ); ?>
 									
-									<label for="status-<?php echo $row->id; ?>"><strong><?php esc_html_e( 'Status:', 'grt-booking' ); ?></strong></label>
-									<select name="status" id="status-<?php echo $row->id; ?>">
+									<label for="status-<?php echo esc_attr( $row->id ); ?>"><strong><?php esc_html_e( 'Status:', 'grt-booking' ); ?></strong></label>
+									<select name="status" id="status-<?php echo esc_attr( $row->id ); ?>">
 										<option value="pending" <?php selected( $row->status, 'pending' ); ?>><?php esc_html_e( 'Pending', 'grt-booking' ); ?></option>
 										<option value="confirmed" <?php selected( $row->status, 'confirmed' ); ?>><?php esc_html_e( 'Confirmed', 'grt-booking' ); ?></option>
 										<option value="completed" <?php selected( $row->status, 'completed' ); ?>><?php esc_html_e( 'Completed', 'grt-booking' ); ?></option>

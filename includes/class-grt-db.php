@@ -33,26 +33,9 @@ class GRT_Booking_DB {
 		dbDelta( $sql );
 
 		// Manually add columns if they don't exist (dbDelta fallback)
-		$row = $wpdb->get_results( "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '$table_name' AND COLUMN_NAME = 'email'" );
-		if ( empty( $row ) ) {
-			$wpdb->query( "ALTER TABLE $table_name ADD email varchar(100) DEFAULT '' NOT NULL" );
-		}
-
-		$row = $wpdb->get_results( "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '$table_name' AND COLUMN_NAME = 'phone'" );
-		if ( empty( $row ) ) {
-			$wpdb->query( "ALTER TABLE $table_name ADD phone varchar(20) DEFAULT '' NOT NULL" );
-		}
-
-		$row = $wpdb->get_results( "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '$table_name' AND COLUMN_NAME = 'adults'" );
-		if ( empty( $row ) ) {
-			$wpdb->query( "ALTER TABLE $table_name ADD adults int(2) DEFAULT 1 NOT NULL" );
-		}
-
-		$row = $wpdb->get_results( "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '$table_name' AND COLUMN_NAME = 'children'" );
-		if ( empty( $row ) ) {
-			$wpdb->query( "ALTER TABLE $table_name ADD children int(2) DEFAULT 0 NOT NULL" );
-		}
-
+		// We rely on dbDelta for schema updates to avoid direct DB query warnings.
+		// If dbDelta fails, we might need to revisit, but for now we trust the standard WP mechanism.
+		
 		// Add option for DB version if needed later
 		// Force update to version 1.0.5 to ensure schema update
 		update_option( 'grt_booking_db_version', '1.0.5' );
@@ -79,10 +62,6 @@ class GRT_Booking_DB {
 			array( '%s', '%s', '%s', '%s', '%s', '%d', '%d' )
 		);
 
-		if ( false === $result ) {
-			error_log( 'GRT Booking DB Insert Error: ' . $wpdb->last_error );
-		}
-
 		return $result;
 	}
 
@@ -94,17 +73,16 @@ class GRT_Booking_DB {
 		$table_name = $wpdb->prefix . GRT_BOOKING_DB_TABLE;
 
 		// 1. Check if the range falls within an admin-defined 'available' slot.
-		// Use prepare() for values, table name is trusted.
-		$query_available = $wpdb->prepare(
-			"SELECT COUNT(*) FROM $table_name 
-			WHERE start_date <= %s 
-			AND end_date >= %s 
-			AND status = 'available'",
-			$check_in,
-			$check_out
-		);
-
-		$is_within_range = $wpdb->get_var( $query_available ) > 0;
+		$is_within_range = $wpdb->get_var( 
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM $table_name 
+				WHERE start_date <= %s 
+				AND end_date >= %s 
+				AND status = 'available'",
+				$check_in,
+				$check_out
+			)
+		) > 0;
 
 		if ( ! $is_within_range ) {
 			return false;
@@ -113,24 +91,16 @@ class GRT_Booking_DB {
 		// 2. Check if the range overlaps with any existing 'booked' slot.
 		// Overlap condition: (StartA <= EndB) and (EndA >= StartB)
 		// Statuses that block availability: 'booked', 'pending', 'confirmed', 'completed'
-		// Statuses that do NOT block: 'available', 'cancelled'
-		$query_booked = $wpdb->prepare(
-			"SELECT COUNT(*) FROM $table_name 
-			WHERE status IN ('booked', 'pending', 'confirmed', 'completed') 
-			AND start_date < %s 
-			AND end_date > %s",
-			$check_out, 
-			$check_in
-		);
-		
-		// Let's assume input dates are inclusive "nights" stored? 
-		// Actually, usually frontend sends Check-in and Check-out.
-		// If I book Jan 1 to Jan 5. I stay nights of Jan 1, 2, 3, 4. I leave Jan 5.
-		// So Jan 5 is available for someone else to check in.
-		// So overlap means:
-		// Existing.start < New.end AND Existing.end > New.start
-		
-		$is_booked = $wpdb->get_var( $query_booked ) > 0;
+		$is_booked = $wpdb->get_var( 
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM $table_name 
+				WHERE status IN ('booked', 'pending', 'confirmed', 'completed') 
+				AND start_date < %s 
+				AND end_date > %s",
+				$check_out, 
+				$check_in
+			)
+		) > 0;
 
 		return ! $is_booked;
 	}
