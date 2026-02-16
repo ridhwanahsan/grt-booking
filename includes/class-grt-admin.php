@@ -20,7 +20,8 @@ class GRT_Booking_Admin {
 	 * Enqueue scripts and styles
 	 */
 	public function enqueue_scripts( $hook ) {
-		if ( 'toplevel_page_grt-booking' !== $hook ) {
+		// Only enqueue on our plugin pages
+		if ( strpos( $hook, 'page_grt-booking' ) === false && 'toplevel_page_grt-booking' !== $hook ) {
 			return;
 		}
 		wp_enqueue_script( 'jquery-ui-datepicker' );
@@ -32,6 +33,7 @@ class GRT_Booking_Admin {
 	 * Add menu page
 	 */
 	public function add_admin_menu() {
+		// Top level menu
 		add_menu_page(
 			__( 'GRT Booking', 'grt-booking' ),
 			__( 'GRT Booking', 'grt-booking' ),
@@ -40,6 +42,26 @@ class GRT_Booking_Admin {
 			array( $this, 'render_admin_page' ),
 			'dashicons-calendar-alt',
 			25
+		);
+
+		// Submenu: Settings (Default)
+		add_submenu_page(
+			'grt-booking',
+			__( 'Settings', 'grt-booking' ),
+			__( 'Settings', 'grt-booking' ),
+			'manage_options',
+			'grt-booking',
+			array( $this, 'render_admin_page' )
+		);
+
+		// Submenu: Date Booked
+		add_submenu_page(
+			'grt-booking',
+			__( 'Date Booked', 'grt-booking' ),
+			__( 'Date Booked', 'grt-booking' ),
+			'manage_options',
+			'grt-booking-booked',
+			array( $this, 'render_date_booked_page' )
 		);
 	}
 
@@ -82,6 +104,24 @@ class GRT_Booking_Admin {
 			'grt_booking_general',
 			array( 'label_for' => 'submit_text', 'default' => 'CHECK AVAILABILITY' )
 		);
+
+		add_settings_field(
+			'msg_available',
+			__( 'Availability Success Message', 'grt-booking' ),
+			array( $this, 'render_textarea_field' ),
+			'grt-booking',
+			'grt_booking_general',
+			array( 'label_for' => 'msg_available', 'default' => 'Room is available! You can proceed with booking.' )
+		);
+
+		add_settings_field(
+			'msg_booked',
+			__( 'Booking Success Message', 'grt-booking' ),
+			array( $this, 'render_textarea_field' ),
+			'grt-booking',
+			'grt_booking_general',
+			array( 'label_for' => 'msg_booked', 'default' => 'The room has been booked. The admin will contact you shortly.' )
+		);
 	}
 
 	/**
@@ -97,6 +137,12 @@ class GRT_Booking_Admin {
 		}
 		if ( isset( $input['submit_text'] ) ) {
 			$new_input['submit_text'] = sanitize_text_field( $input['submit_text'] );
+		}
+		if ( isset( $input['msg_available'] ) ) {
+			$new_input['msg_available'] = sanitize_textarea_field( $input['msg_available'] );
+		}
+		if ( isset( $input['msg_booked'] ) ) {
+			$new_input['msg_booked'] = sanitize_textarea_field( $input['msg_booked'] );
 		}
 		return $new_input;
 	}
@@ -120,12 +166,23 @@ class GRT_Booking_Admin {
 	}
 
 	/**
+	 * Render textarea field
+	 */
+	public function render_textarea_field( $args ) {
+		$options = get_option( 'grt_booking_settings' );
+		$value = isset( $options[ $args['label_for'] ] ) ? $options[ $args['label_for'] ] : $args['default'];
+		echo '<textarea id="' . esc_attr( $args['label_for'] ) . '" name="grt_booking_settings[' . esc_attr( $args['label_for'] ) . ']" rows="3" class="large-text">' . esc_textarea( $value ) . '</textarea>';
+	}
+
+	/**
 	 * Render Admin Page
 	 */
 	public function render_admin_page() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
+
+		$active_tab = isset( $_GET['tab'] ) ? $_GET['tab'] : 'general';
 
 		// Handle messages
 		if ( isset( $_GET['message'] ) ) {
@@ -142,83 +199,90 @@ class GRT_Booking_Admin {
 		<div class="wrap">
 			<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
 			
-			<form action="options.php" method="post">
-				<?php
-				settings_fields( 'grt_booking_options' );
-				do_settings_sections( 'grt-booking' );
-				submit_button();
-				?>
-			</form>
+			<h2 class="nav-tab-wrapper">
+				<a href="?page=grt-booking&tab=general" class="nav-tab <?php echo $active_tab == 'general' ? 'nav-tab-active' : ''; ?>"><?php esc_html_e( 'General Settings', 'grt-booking' ); ?></a>
+				<a href="?page=grt-booking&tab=availability" class="nav-tab <?php echo $active_tab == 'availability' ? 'nav-tab-active' : ''; ?>"><?php esc_html_e( 'Availability', 'grt-booking' ); ?></a>
+			</h2>
 
-			<hr>
-
-			<h2><?php esc_html_e( 'Availability Management', 'grt-booking' ); ?></h2>
-			
-			<!-- Add Availability Form -->
-			<div class="card" style="max-width: 100%; padding: 20px;">
-				<h3><?php esc_html_e( 'Add Available Date Range', 'grt-booking' ); ?></h3>
-				<form action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post">
-					<input type="hidden" name="action" value="grt_add_availability">
-					<?php wp_nonce_field( 'grt_add_availability_nonce', 'grt_nonce' ); ?>
-					
-					<label for="start_date"><?php esc_html_e( 'Start Date:', 'grt-booking' ); ?></label>
-					<input type="text" id="start_date" name="start_date" class="grt-datepicker" required>
-					
-					<label for="end_date"><?php esc_html_e( 'End Date:', 'grt-booking' ); ?></label>
-					<input type="text" id="end_date" name="end_date" class="grt-datepicker" required>
-					
-					<input type="submit" class="button button-primary" value="<?php esc_attr_e( 'Add Availability', 'grt-booking' ); ?>">
-				</form>
-				<script>
-				jQuery(document).ready(function($){
-					$('.grt-datepicker').datepicker({
-						dateFormat: 'yy-mm-dd',
-						minDate: 0
-					});
-				});
-				</script>
-			</div>
-
-			<br>
-
-			<!-- List Availability -->
-			<table class="wp-list-table widefat fixed striped">
-				<thead>
-					<tr>
-						<th><?php esc_html_e( 'Start Date', 'grt-booking' ); ?></th>
-						<th><?php esc_html_e( 'End Date', 'grt-booking' ); ?></th>
-						<th><?php esc_html_e( 'Status', 'grt-booking' ); ?></th>
-						<th><?php esc_html_e( 'Actions', 'grt-booking' ); ?></th>
-					</tr>
-				</thead>
-				<tbody>
+			<?php if ( $active_tab == 'general' ) : ?>
+				<form action="options.php" method="post">
 					<?php
-					global $wpdb;
-					$table_name = $wpdb->prefix . 'grt_booking_availability';
-					$results = $wpdb->get_results( "SELECT * FROM $table_name ORDER BY start_date DESC" );
-
-					if ( $results ) {
-						foreach ( $results as $row ) {
-							echo '<tr>';
-							echo '<td>' . esc_html( $row->start_date ) . '</td>';
-							echo '<td>' . esc_html( $row->end_date ) . '</td>';
-							echo '<td>' . esc_html( ucfirst( $row->status ) ) . '</td>';
-							echo '<td>';
-							echo '<form action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" method="post" style="display:inline;">';
-							echo '<input type="hidden" name="action" value="grt_delete_availability">';
-							echo '<input type="hidden" name="id" value="' . esc_attr( $row->id ) . '">';
-							wp_nonce_field( 'grt_delete_availability_nonce', 'grt_nonce' );
-							echo '<input type="submit" class="button button-link-delete" value="' . esc_attr__( 'Delete', 'grt-booking' ) . '" onclick="return confirm(\'' . esc_js( __( 'Are you sure?', 'grt-booking' ) ) . '\');">';
-							echo '</form>';
-							echo '</td>';
-							echo '</tr>';
-						}
-					} else {
-						echo '<tr><td colspan="4">' . esc_html__( 'No availability records found.', 'grt-booking' ) . '</td></tr>';
-					}
+					settings_fields( 'grt_booking_options' );
+					do_settings_sections( 'grt-booking' );
+					submit_button();
 					?>
-				</tbody>
-			</table>
+				</form>
+			<?php else : ?>
+				
+				<h2><?php esc_html_e( 'Availability Management', 'grt-booking' ); ?></h2>
+				
+				<!-- Add Availability Form -->
+				<div class="card" style="max-width: 100%; padding: 20px;">
+					<h3><?php esc_html_e( 'Add Available Date Range', 'grt-booking' ); ?></h3>
+					<form action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post">
+						<input type="hidden" name="action" value="grt_add_availability">
+						<?php wp_nonce_field( 'grt_add_availability_nonce', 'grt_nonce' ); ?>
+						
+						<label for="start_date"><?php esc_html_e( 'Start Date:', 'grt-booking' ); ?></label>
+						<input type="text" id="start_date" name="start_date" class="grt-datepicker" required>
+						
+						<label for="end_date"><?php esc_html_e( 'End Date:', 'grt-booking' ); ?></label>
+						<input type="text" id="end_date" name="end_date" class="grt-datepicker" required>
+						
+						<input type="submit" class="button button-primary" value="<?php esc_attr_e( 'Add Availability', 'grt-booking' ); ?>">
+					</form>
+					<script>
+					jQuery(document).ready(function($){
+						$('.grt-datepicker').datepicker({
+							dateFormat: 'yy-mm-dd',
+							minDate: 0
+						});
+					});
+					</script>
+				</div>
+
+				<br>
+
+				<!-- List Availability -->
+				<table class="wp-list-table widefat fixed striped">
+					<thead>
+						<tr>
+							<th><?php esc_html_e( 'Start Date', 'grt-booking' ); ?></th>
+							<th><?php esc_html_e( 'End Date', 'grt-booking' ); ?></th>
+							<th><?php esc_html_e( 'Status', 'grt-booking' ); ?></th>
+							<th><?php esc_html_e( 'Actions', 'grt-booking' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php
+						global $wpdb;
+						$table_name = $wpdb->prefix . 'grt_booking_availability';
+						$results = $wpdb->get_results( "SELECT * FROM $table_name ORDER BY start_date DESC" );
+
+						if ( $results ) {
+							foreach ( $results as $row ) {
+								echo '<tr>';
+								echo '<td>' . esc_html( $row->start_date ) . '</td>';
+								echo '<td>' . esc_html( $row->end_date ) . '</td>';
+								echo '<td>' . esc_html( ucfirst( $row->status ) ) . '</td>';
+								echo '<td>';
+								echo '<form action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" method="post" style="display:inline;">';
+								echo '<input type="hidden" name="action" value="grt_delete_availability">';
+								echo '<input type="hidden" name="id" value="' . esc_attr( $row->id ) . '">';
+								wp_nonce_field( 'grt_delete_availability_nonce', 'grt_nonce' );
+								echo '<input type="submit" class="button button-link-delete" value="' . esc_attr__( 'Delete', 'grt-booking' ) . '" onclick="return confirm(\'' . esc_js( __( 'Are you sure?', 'grt-booking' ) ) . '\');">';
+								echo '</form>';
+								echo '</td>';
+								echo '</tr>';
+							}
+						} else {
+							echo '<tr><td colspan="4">' . esc_html__( 'No availability records found.', 'grt-booking' ) . '</td></tr>';
+						}
+						?>
+					</tbody>
+				</table>
+
+			<?php endif; ?>
 		</div>
 		<?php
 	}
@@ -250,11 +314,11 @@ class GRT_Booking_Admin {
 				array( '%s', '%s', '%s' )
 			);
 			
-			wp_redirect( admin_url( 'admin.php?page=grt-booking&message=added' ) );
+			wp_redirect( admin_url( 'admin.php?page=grt-booking&tab=availability&message=added' ) );
 			exit;
 		}
 		
-		wp_redirect( admin_url( 'admin.php?page=grt-booking&message=error' ) );
+		wp_redirect( admin_url( 'admin.php?page=grt-booking&tab=availability&message=error' ) );
 		exit;
 	}
 
@@ -280,11 +344,61 @@ class GRT_Booking_Admin {
 				array( '%d' )
 			);
 			
-			wp_redirect( admin_url( 'admin.php?page=grt-booking&message=deleted' ) );
+			wp_redirect( admin_url( 'admin.php?page=grt-booking&tab=availability&message=deleted' ) );
 			exit;
 		}
 
-		wp_redirect( admin_url( 'admin.php?page=grt-booking&message=error' ) );
+		wp_redirect( admin_url( 'admin.php?page=grt-booking&tab=availability&message=error' ) );
 		exit;
+	}
+
+	/**
+	 * Render Date Booked Page
+	 */
+	public function render_date_booked_page() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		
+		?>
+		<div class="wrap">
+			<h1><?php esc_html_e( 'Date Booked', 'grt-booking' ); ?></h1>
+			<p><?php esc_html_e( 'Below are the dates that have been booked.', 'grt-booking' ); ?></p>
+			
+			<div class="grt-booked-container">
+				<?php
+				global $wpdb;
+				$table_name = $wpdb->prefix . 'grt_booking_availability';
+				
+				// Query for status = 'booked'
+				$results = $wpdb->get_results( "SELECT * FROM $table_name WHERE status = 'booked' ORDER BY start_date DESC" );
+
+				if ( $results ) {
+					foreach ( $results as $row ) {
+						?>
+						<div class="grt-booked-box">
+							<div class="grt-booked-dates">
+								<span class="dashicons dashicons-calendar-alt"></span>
+								<strong><?php echo esc_html( $row->start_date ); ?></strong> 
+								<?php esc_html_e( 'to', 'grt-booking' ); ?> 
+								<strong><?php echo esc_html( $row->end_date ); ?></strong>
+							</div>
+							<div class="grt-booked-status">
+								<?php esc_html_e( 'Status:', 'grt-booking' ); ?> 
+								<span class="grt-status-badge booked"><?php echo esc_html( ucfirst( $row->status ) ); ?></span>
+							</div>
+							<div class="grt-booked-id">
+								ID: #<?php echo esc_html( $row->id ); ?>
+							</div>
+						</div>
+						<?php
+					}
+				} else {
+					echo '<div class="notice notice-info inline"><p>' . esc_html__( 'No booked dates found.', 'grt-booking' ) . '</p></div>';
+				}
+				?>
+			</div>
+		</div>
+		<?php
 	}
 }

@@ -9,14 +9,14 @@ class GRT_Booking_AJAX {
 	 * Initialize hooks
 	 */
 	public function init() {
-		add_action( 'wp_ajax_grt_check_availability', array( $this, 'check_availability' ) );
-		add_action( 'wp_ajax_nopriv_grt_check_availability', array( $this, 'check_availability' ) );
+		add_action( 'wp_ajax_grt_check_availability', array( $this, 'process_booking' ) );
+		add_action( 'wp_ajax_nopriv_grt_check_availability', array( $this, 'process_booking' ) );
 	}
 
 	/**
-	 * Check availability
+	 * Process Booking (formerly check_availability)
 	 */
-	public function check_availability() {
+	public function process_booking() {
 		check_ajax_referer( 'grt_booking_nonce', 'security' );
 
 		// Validate inputs
@@ -57,7 +57,18 @@ class GRT_Booking_AJAX {
 		$is_available = GRT_Booking_DB::check_availability( $check_in, $check_out );
 
 		if ( $is_available ) {
-			wp_send_json_success( array( 'message' => __( 'Room is available! You can proceed with booking.', 'grt-booking' ) ) );
+			// Perform Booking
+			$inserted = GRT_Booking_DB::insert_availability( $check_in, $check_out, 'booked' );
+
+			if ( $inserted ) {
+				$msg = isset( $options['msg_booked'] ) && ! empty( $options['msg_booked'] ) 
+					? $options['msg_booked'] 
+					: __( 'The room has been booked. The admin will contact you shortly.', 'grt-booking' );
+				
+				wp_send_json_success( array( 'message' => $msg ) );
+			} else {
+				wp_send_json_error( array( 'message' => __( 'Failed to process booking. Please try again.', 'grt-booking' ) ) );
+			}
 		} else {
 			wp_send_json_error( array( 'message' => __( 'Sorry, the room is not available for the selected dates.', 'grt-booking' ) ) );
 		}

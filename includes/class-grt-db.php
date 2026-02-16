@@ -57,15 +57,8 @@ class GRT_Booking_DB {
 		global $wpdb;
 		$table_name = $wpdb->prefix . GRT_BOOKING_DB_TABLE;
 
-		// Logic:
-		// 1. Must be within an 'available' range provided by admin.
-		// 2. (If we had bookings) Must not overlap with 'booked' ranges.
-		
-		// For this implementation, we assume the table stores "Available" slots.
-		// We check if there is ANY row where start_date <= check_in AND end_date >= check_out
-		// AND status = 'available'.
-		
-		$query = $wpdb->prepare(
+		// 1. Check if the range falls within an admin-defined 'available' slot.
+		$query_available = $wpdb->prepare(
 			"SELECT COUNT(*) FROM $table_name 
 			WHERE start_date <= %s 
 			AND end_date >= %s 
@@ -74,9 +67,47 @@ class GRT_Booking_DB {
 			$check_out
 		);
 
-		$count = $wpdb->get_var( $query );
+		$is_within_range = $wpdb->get_var( $query_available ) > 0;
 
-		return $count > 0;
+		if ( ! $is_within_range ) {
+			return false;
+		}
+
+		// 2. Check if the range overlaps with any existing 'booked' slot.
+		// Overlap condition: (StartA <= EndB) and (EndA >= StartB)
+		$query_booked = $wpdb->prepare(
+			"SELECT COUNT(*) FROM $table_name 
+			WHERE status = 'booked' 
+			AND start_date < %s 
+			AND end_date > %s",
+			$check_out, // EndB (Requested End) - using strict inequality for check-out logic usually, but here dates are inclusive days?
+			// Usually hotel logic: Check-out date can be the Check-in date of next guest.
+			// If dates are "nights":
+			// Booking: Jan 1 to Jan 2 (1 night).
+			// If another booking is Jan 2 to Jan 3.
+			// Overlap check: 
+			// Existing: [Jan 1, Jan 2]
+			// New: [Jan 2, Jan 3]
+			// They overlap on Jan 2.
+			
+			// Let's stick to standard SQL overlap for inclusive dates:
+			// start_date <= check_out AND end_date >= check_in
+			// However, for hotels, if check_out is the day you leave, it's usually available for next check-in.
+			// So we usually compare: start_date < check_out AND end_date > check_in
+			
+			$check_in
+		);
+		
+		// Let's assume input dates are inclusive "nights" stored? 
+		// Actually, usually frontend sends Check-in and Check-out.
+		// If I book Jan 1 to Jan 5. I stay nights of Jan 1, 2, 3, 4. I leave Jan 5.
+		// So Jan 5 is available for someone else to check in.
+		// So overlap means:
+		// Existing.start < New.end AND Existing.end > New.start
+		
+		$is_booked = $wpdb->get_var( $query_booked ) > 0;
+
+		return ! $is_booked;
 	}
 
 	/**
