@@ -1,11 +1,11 @@
 <?php
 /**
  * Plugin Name: GRT Booking
- * Plugin URI:  https://example.com/grt-booking
+ * Plugin URI:  https://github.com/ridhwanahsan/grt-booking
  * Description: A comprehensive room reservation system.
  * Version:     1.0.0
  * Author:      ridhwanahsann
- * Author URI:  https://example.com
+ * Author URI:  https://github.com/ridhwanahsan
  * License:     GPL-2.0+
  * Text Domain: grt-booking
  * Domain Path: /languages
