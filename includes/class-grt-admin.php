@@ -403,6 +403,7 @@ class GRT_Booking_Admin {
 			global $wpdb;
 			$table_name = $wpdb->prefix . 'grt_booking_availability';
 			
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery -- Custom table update.
 			$wpdb->update(
 				$table_name,
 				array( 'status' => $status ),

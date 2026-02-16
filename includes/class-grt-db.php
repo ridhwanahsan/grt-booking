@@ -93,9 +93,9 @@ class GRT_Booking_DB {
 		// 2. Check if the range overlaps with any existing 'booked' slot.
 		// Overlap condition: (StartA <= EndB) and (EndA >= StartB)
 		// Statuses that block availability: 'booked', 'pending', 'confirmed', 'completed'
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery -- Table name cannot be prepared.
 		$is_booked = $wpdb->get_var( 
 			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery -- Table name cannot be prepared.
 				"SELECT COUNT(*) FROM $table_name 
 				WHERE status IN ('booked', 'pending', 'confirmed', 'completed') 
 				AND start_date < %s 
