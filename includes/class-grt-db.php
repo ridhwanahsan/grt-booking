@@ -41,7 +41,7 @@ class GRT_Booking_DB {
 		global $wpdb;
 		$table_name = $wpdb->prefix . GRT_BOOKING_DB_TABLE;
 
-		return $wpdb->insert(
+		$result = $wpdb->insert(
 			$table_name,
 			array(
 				'start_date' => $start_date,
@@ -52,6 +52,12 @@ class GRT_Booking_DB {
 			),
 			array( '%s', '%s', '%s', '%s', '%s' )
 		);
+
+		if ( false === $result ) {
+			error_log( 'GRT Booking DB Insert Error: ' . $wpdb->last_error );
+		}
+
+		return $result;
 	}
 
 	/**

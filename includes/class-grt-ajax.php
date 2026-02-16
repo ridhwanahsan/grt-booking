@@ -17,6 +17,9 @@ class GRT_Booking_AJAX {
 	 * Process Booking (formerly check_availability)
 	 */
 	public function process_booking() {
+		// Log for debugging
+		error_log( 'GRT Booking AJAX Triggered' );
+		
 		check_ajax_referer( 'grt_booking_nonce', 'security' );
 
 		// Validate inputs

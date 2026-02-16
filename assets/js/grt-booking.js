@@ -114,8 +114,8 @@ jQuery(document).ready(function($) {
             check_out: checkout,
             adults: $('#grt-adults').val(),
             children: $('#grt-children').val(),
-            email: email,
-            phone: phone
+            email: $('#grt-email').val(),
+            phone: $('#grt-phone').val()
         };
 
         // Disable button and show spinner
@@ -123,21 +123,29 @@ jQuery(document).ready(function($) {
         $spinner.show();
 
         // AJAX Request
-        $.post(grt_booking_obj.ajax_url, data, function(response) {
-            $btn.prop('disabled', false);
-            $spinner.hide();
-            
-            if (response.success) {
-                $message.addClass('success').text(response.data.message).fadeIn();
-                // Optional: Clear form or redirect
-                // $form[0].reset();
-            } else {
-                $message.addClass('error').text(response.data.message || 'An error occurred.').fadeIn();
+        $.ajax({
+            url: grt_booking_obj.ajax_url,
+            type: 'POST',
+            data: data,
+            dataType: 'json',
+            success: function(response) {
+                $btn.prop('disabled', false);
+                $spinner.hide();
+                
+                if (response.success) {
+                    $message.removeClass('error').addClass('success').text(response.data.message).fadeIn();
+                    $form[0].reset(); // Clear form on success
+                } else {
+                    $message.removeClass('success').addClass('error').text(response.data.message || 'An error occurred.').fadeIn();
+                }
+            },
+            error: function(xhr, status, error) {
+                $btn.prop('disabled', false);
+                $spinner.hide();
+                console.error("AJAX Error:", status, error);
+                console.log(xhr.responseText);
+                $message.removeClass('success').addClass('error').text('Server error. Please check console for details.').fadeIn();
             }
-        }).fail(function() {
-            $btn.prop('disabled', false);
-            $spinner.hide();
-            $message.addClass('error').text('Server error. Please try again.').fadeIn();
         });
     });
 
