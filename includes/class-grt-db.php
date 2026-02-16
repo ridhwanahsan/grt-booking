@@ -48,6 +48,7 @@ class GRT_Booking_DB {
 		global $wpdb;
 		$table_name = $wpdb->prefix . GRT_BOOKING_DB_TABLE;
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery -- Custom table insert.
 		$result = $wpdb->insert(
 			$table_name,
 			array(
@@ -73,6 +74,7 @@ class GRT_Booking_DB {
 		$table_name = $wpdb->prefix . GRT_BOOKING_DB_TABLE;
 
 		// 1. Check if the range falls within an admin-defined 'available' slot.
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery -- Table name cannot be prepared.
 		$is_within_range = $wpdb->get_var( 
 			$wpdb->prepare(
 				"SELECT COUNT(*) FROM $table_name 
@@ -91,6 +93,7 @@ class GRT_Booking_DB {
 		// 2. Check if the range overlaps with any existing 'booked' slot.
 		// Overlap condition: (StartA <= EndB) and (EndA >= StartB)
 		// Statuses that block availability: 'booked', 'pending', 'confirmed', 'completed'
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery -- Table name cannot be prepared.
 		$is_booked = $wpdb->get_var( 
 			$wpdb->prepare(
 				"SELECT COUNT(*) FROM $table_name 
@@ -113,6 +116,7 @@ class GRT_Booking_DB {
 		global $wpdb;
 		$table_name = $wpdb->prefix . GRT_BOOKING_DB_TABLE;
 		// Ignoring "Direct database call" warning as per WP standard for custom tables.
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery -- Table name cannot be prepared.
 		return $wpdb->get_results( "SELECT start_date, end_date, status FROM $table_name ORDER BY start_date ASC" );
 	}
 
@@ -123,6 +127,7 @@ class GRT_Booking_DB {
 		global $wpdb;
 		$table_name = $wpdb->prefix . GRT_BOOKING_DB_TABLE;
 		// Use wpdb->delete which handles preparation internally.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery -- Custom table delete.
 		return $wpdb->delete( $table_name, array( 'id' => $id ), array( '%d' ) );
 	}
 }

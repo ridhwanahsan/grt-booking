@@ -3,6 +3,10 @@
  * Shortcode Class
  */
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 class GRT_Booking_Shortcode {
 
 	/**

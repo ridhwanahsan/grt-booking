@@ -12,6 +12,7 @@ global $wpdb;
 $grt_booking_table_name = $wpdb->prefix . 'grt_booking_availability';
 
 // Drop the table
+// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table name cannot be prepared, custom table query.
 $wpdb->query( "DROP TABLE IF EXISTS $grt_booking_table_name" );
 
 // Delete options

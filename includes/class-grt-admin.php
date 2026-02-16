@@ -3,6 +3,10 @@
  * Admin Class
  */
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 class GRT_Booking_Admin {
 
 	/**
@@ -183,9 +187,11 @@ class GRT_Booking_Admin {
 			return;
 		}
 
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Tab navigation only.
 		$active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( wp_unslash( $_GET['tab'] ) ) : 'general';
 
 		// Handle messages
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Message display only.
 		if ( isset( $_GET['message'] ) ) {
 			// No nonce check needed here as this is just displaying a message based on a URL parameter
 			$message = sanitize_text_field( wp_unslash( $_GET['message'] ) );
@@ -272,6 +278,7 @@ class GRT_Booking_Admin {
 						// To silence the warning, we can't do much as it's a false positive for table names,
 						// but ensuring $table_name is derived from $wpdb->prefix is the correct way.
 						
+						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery -- Table name cannot be prepared, custom table query.
 						$results = $wpdb->get_results( "SELECT * FROM $table_name ORDER BY start_date DESC" );
 
 						if ( $results ) {
@@ -313,12 +320,13 @@ class GRT_Booking_Admin {
 		check_admin_referer( 'grt_add_availability_nonce', 'grt_nonce' );
 
 		if ( isset( $_POST['start_date'], $_POST['end_date'] ) ) {
-			$start_date = sanitize_text_field( $_POST['start_date'] );
-			$end_date   = sanitize_text_field( $_POST['end_date'] );
+			$start_date = sanitize_text_field( wp_unslash( $_POST['start_date'] ) );
+			$end_date   = sanitize_text_field( wp_unslash( $_POST['end_date'] ) );
 
 			global $wpdb;
 			$table_name = $wpdb->prefix . 'grt_booking_availability';
 			
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery -- Custom table insert.
 			$wpdb->insert(
 				$table_name,
 				array(
@@ -353,6 +361,7 @@ class GRT_Booking_Admin {
 			global $wpdb;
 			$table_name = $wpdb->prefix . 'grt_booking_availability';
 			
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery -- Custom table delete.
 			$wpdb->delete(
 				$table_name,
 				array( 'id' => $id ),
@@ -385,7 +394,7 @@ class GRT_Booking_Admin {
 
 		if ( isset( $_POST['id'], $_POST['status'] ) ) {
 			$id = absint( $_POST['id'] );
-			$status = sanitize_text_field( $_POST['status'] );
+			$status = sanitize_text_field( wp_unslash( $_POST['status'] ) );
 			
 			// Validate status
 			$allowed_statuses = array( 'pending', 'confirmed', 'completed', 'cancelled', 'booked' );
@@ -404,11 +413,11 @@ class GRT_Booking_Admin {
 				array( '%d' )
 			);
 			
-			wp_redirect( admin_url( 'admin.php?page=grt-booking-booked&message=updated' ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=grt-booking-booked&message=updated' ) );
 			exit;
 		}
 
-		wp_redirect( admin_url( 'admin.php?page=grt-booking-booked&message=error' ) );
+		wp_safe_redirect( admin_url( 'admin.php?page=grt-booking-booked&message=error' ) );
 		exit;
 	}
 
@@ -432,6 +441,7 @@ class GRT_Booking_Admin {
 				
 				// Query for status != 'available'
 				// Ignoring "Unescaped parameter $table_name" warning as table names cannot be prepared.
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table name cannot be prepared, custom table query.
 				$results = $wpdb->get_results( "SELECT * FROM $table_name WHERE status != 'available' ORDER BY start_date DESC" );
 
 				if ( $results ) {
