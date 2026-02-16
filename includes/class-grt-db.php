@@ -21,6 +21,8 @@ class GRT_Booking_DB {
 			status varchar(20) DEFAULT 'available' NOT NULL,
 			email varchar(100) DEFAULT '' NOT NULL,
 			phone varchar(20) DEFAULT '' NOT NULL,
+			adults int(2) DEFAULT 1 NOT NULL,
+			children int(2) DEFAULT 0 NOT NULL,
 			created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
 			PRIMARY KEY  (id),
 			KEY start_date (start_date),
@@ -30,14 +32,36 @@ class GRT_Booking_DB {
 		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
 		dbDelta( $sql );
 
+		// Manually add columns if they don't exist (dbDelta fallback)
+		$row = $wpdb->get_results( "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '$table_name' AND COLUMN_NAME = 'email'" );
+		if ( empty( $row ) ) {
+			$wpdb->query( "ALTER TABLE $table_name ADD email varchar(100) DEFAULT '' NOT NULL" );
+		}
+
+		$row = $wpdb->get_results( "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '$table_name' AND COLUMN_NAME = 'phone'" );
+		if ( empty( $row ) ) {
+			$wpdb->query( "ALTER TABLE $table_name ADD phone varchar(20) DEFAULT '' NOT NULL" );
+		}
+
+		$row = $wpdb->get_results( "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '$table_name' AND COLUMN_NAME = 'adults'" );
+		if ( empty( $row ) ) {
+			$wpdb->query( "ALTER TABLE $table_name ADD adults int(2) DEFAULT 1 NOT NULL" );
+		}
+
+		$row = $wpdb->get_results( "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '$table_name' AND COLUMN_NAME = 'children'" );
+		if ( empty( $row ) ) {
+			$wpdb->query( "ALTER TABLE $table_name ADD children int(2) DEFAULT 0 NOT NULL" );
+		}
+
 		// Add option for DB version if needed later
-		add_option( 'grt_booking_db_version', '1.0.1' );
+		// Force update to version 1.0.5 to ensure schema update
+		update_option( 'grt_booking_db_version', '1.0.5' );
 	}
 
 	/**
 	 * Insert availability range.
 	 */
-	public static function insert_availability( $start_date, $end_date, $status = 'available', $email = '', $phone = '' ) {
+	public static function insert_availability( $start_date, $end_date, $status = 'available', $email = '', $phone = '', $adults = 1, $children = 0 ) {
 		global $wpdb;
 		$table_name = $wpdb->prefix . GRT_BOOKING_DB_TABLE;
 
@@ -49,8 +73,10 @@ class GRT_Booking_DB {
 				'status'     => $status,
 				'email'      => $email,
 				'phone'      => $phone,
+				'adults'     => $adults,
+				'children'   => $children,
 			),
-			array( '%s', '%s', '%s', '%s', '%s' )
+			array( '%s', '%s', '%s', '%s', '%s', '%d', '%d' )
 		);
 
 		if ( false === $result ) {

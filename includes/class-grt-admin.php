@@ -195,6 +195,12 @@ class GRT_Booking_Admin {
 			}
 		}
 
+		// DB Column Debug
+		global $wpdb;
+		$table_name = $wpdb->prefix . 'grt_booking_availability';
+		$cols = $wpdb->get_results( "DESCRIBE $table_name" );
+		// echo '<pre>'; print_r( $cols ); echo '</pre>';
+
 		?>
 		<div class="wrap">
 			<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
@@ -383,6 +389,18 @@ class GRT_Booking_Admin {
 								<?php esc_html_e( 'to', 'grt-booking' ); ?> 
 								<strong><?php echo esc_html( $row->end_date ); ?></strong>
 							</div>
+							
+							<div class="grt-booked-details" style="margin: 10px 0; padding: 10px; background: #f9f9f9; border-radius: 4px;">
+								<?php if ( ! empty( $row->email ) ) : ?>
+									<p style="margin: 5px 0;"><strong><?php esc_html_e( 'Email:', 'grt-booking' ); ?></strong> <?php echo esc_html( $row->email ); ?></p>
+								<?php endif; ?>
+								<?php if ( ! empty( $row->phone ) ) : ?>
+									<p style="margin: 5px 0;"><strong><?php esc_html_e( 'Phone:', 'grt-booking' ); ?></strong> <?php echo esc_html( $row->phone ); ?></p>
+								<?php endif; ?>
+								<p style="margin: 5px 0;"><strong><?php esc_html_e( 'Adults:', 'grt-booking' ); ?></strong> <?php echo esc_html( isset( $row->adults ) ? $row->adults : 1 ); ?></p>
+								<p style="margin: 5px 0;"><strong><?php esc_html_e( 'Children:', 'grt-booking' ); ?></strong> <?php echo esc_html( isset( $row->children ) ? $row->children : 0 ); ?></p>
+							</div>
+
 							<div class="grt-booked-status">
 								<?php esc_html_e( 'Status:', 'grt-booking' ); ?> 
 								<span class="grt-status-badge booked"><?php echo esc_html( ucfirst( $row->status ) ); ?></span>

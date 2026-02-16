@@ -27,6 +27,8 @@ class GRT_Booking_AJAX {
 		$check_out = isset( $_POST['check_out'] ) ? sanitize_text_field( $_POST['check_out'] ) : '';
 		$adults    = isset( $_POST['adults'] ) ? absint( $_POST['adults'] ) : 1;
 		$children  = isset( $_POST['children'] ) ? absint( $_POST['children'] ) : 0;
+		$email     = isset( $_POST['email'] ) ? sanitize_email( $_POST['email'] ) : '';
+		$phone     = isset( $_POST['phone'] ) ? sanitize_text_field( $_POST['phone'] ) : '';
 
 		if ( empty( $check_in ) || empty( $check_out ) ) {
 			wp_send_json_error( array( 'message' => __( 'Please select check-in and check-out dates.', 'grt-booking' ) ) );
@@ -61,7 +63,7 @@ class GRT_Booking_AJAX {
 
 		if ( $is_available ) {
 			// Perform Booking
-			$inserted = GRT_Booking_DB::insert_availability( $check_in, $check_out, 'booked', $email, $phone );
+			$inserted = GRT_Booking_DB::insert_availability( $check_in, $check_out, 'booked', $email, $phone, $adults, $children );
 
 			if ( $inserted ) {
 				$msg = isset( $options['msg_booked'] ) && ! empty( $options['msg_booked'] ) 

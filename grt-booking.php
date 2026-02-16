@@ -40,7 +40,7 @@ function run_grt_booking() {
 	}
 
 	// Check DB version and update if needed
-	if ( get_option( 'grt_booking_db_version' ) !== '1.0.1' ) {
+	if ( get_option( 'grt_booking_db_version' ) !== '1.0.5' ) {
 		GRT_Booking_DB::install();
 	}
 
