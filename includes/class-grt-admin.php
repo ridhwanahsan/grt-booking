@@ -321,8 +321,8 @@ class GRT_Booking_Admin {
 		check_admin_referer( 'grt_add_availability_nonce', 'grt_nonce' );
 
 		if ( isset( $_POST['start_date'], $_POST['end_date'] ) ) {
-			$start_date = sanitize_text_field( $_POST['start_date'] );
-			$end_date   = sanitize_text_field( $_POST['end_date'] );
+			$start_date = sanitize_text_field( wp_unslash( $_POST['start_date'] ) );
+			$end_date   = sanitize_text_field( wp_unslash( $_POST['end_date'] ) );
 
 			global $wpdb;
 			$table_name = $wpdb->prefix . 'grt_booking_availability';
@@ -361,6 +361,7 @@ class GRT_Booking_Admin {
 			global $wpdb;
 			$table_name = $wpdb->prefix . 'grt_booking_availability';
 			
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery -- Custom table delete.
 			$wpdb->delete(
 				$table_name,
 				array( 'id' => $id ),
