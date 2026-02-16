@@ -27,6 +27,18 @@
 			</div>
 		</div>
 
+		<div class="grt-form-row">
+			<div class="grt-form-group">
+				<label for="grt-email"><?php esc_html_e( 'Email', 'grt-booking' ); ?> <span class="required">*</span></label>
+				<input type="email" id="grt-email" name="email" required>
+			</div>
+
+			<div class="grt-form-group">
+				<label for="grt-phone"><?php esc_html_e( 'Phone Number', 'grt-booking' ); ?> <span class="required">*</span></label>
+				<input type="tel" id="grt-phone" name="phone" required>
+			</div>
+		</div>
+
 		<div class="grt-form-actions">
 			<button type="submit" id="grt-submit-btn" class="grt-submit-btn">
 				<span class="grt-btn-text"><?php echo esc_html( $submit_text ); ?></span>

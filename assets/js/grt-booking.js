@@ -12,7 +12,9 @@ jQuery(document).ready(function($) {
         var dateString = year + "-" + month + "-" + day;
 
         var isAvailable = false;
+        var isBooked = false;
 
+        // 1. Check if date falls within ANY 'available' range
         for (var i = 0; i < availableRanges.length; i++) {
             var range = availableRanges[i];
             if (dateString >= range.start_date && dateString <= range.end_date && range.status === 'available') {
@@ -20,6 +22,36 @@ jQuery(document).ready(function($) {
                 break;
             }
         }
+
+        // 2. Check if date falls within ANY 'booked' range (Collision Check)
+        if (isAvailable) {
+            for (var j = 0; j < availableRanges.length; j++) {
+                var range = availableRanges[j];
+                // Note: Using strict < end_date for hotel logic (checkout day is usually free), 
+                // but matching backend logic: start < check_out AND end > check_in
+                // If a date is 'booked' from Jan 5 to Jan 10.
+                // Jan 5 is booked. Jan 6, 7, 8, 9 are booked.
+                // Jan 10 is usually available for checkout/new checkin.
+                
+                // Let's stick to the logic: If date >= start AND date < end, it is occupied.
+                if (range.status === 'booked') {
+                     if (dateString >= range.start_date && dateString < range.end_date) {
+                         isBooked = true;
+                         break;
+                     }
+                     // Special case: If Check-in matches a booked Start Date, it's occupied (cannot double book start)
+                     if (dateString === range.start_date) {
+                         isBooked = true;
+                         break;
+                     }
+                }
+            }
+        }
+
+        if (isBooked) {
+            return [false, "booked-date"]; // Return false to disable
+        }
+
         return [isAvailable, ""];
     }
 
@@ -81,7 +113,9 @@ jQuery(document).ready(function($) {
             check_in: checkin,
             check_out: checkout,
             adults: $('#grt-adults').val(),
-            children: $('#grt-children').val()
+            children: $('#grt-children').val(),
+            email: email,
+            phone: phone
         };
 
         // Disable button and show spinner
@@ -95,6 +129,8 @@ jQuery(document).ready(function($) {
             
             if (response.success) {
                 $message.addClass('success').text(response.data.message).fadeIn();
+                // Optional: Clear form or redirect
+                // $form[0].reset();
             } else {
                 $message.addClass('error').text(response.data.message || 'An error occurred.').fadeIn();
             }

@@ -19,6 +19,8 @@ class GRT_Booking_DB {
 			start_date date NOT NULL,
 			end_date date NOT NULL,
 			status varchar(20) DEFAULT 'available' NOT NULL,
+			email varchar(100) DEFAULT '' NOT NULL,
+			phone varchar(20) DEFAULT '' NOT NULL,
 			created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
 			PRIMARY KEY  (id),
 			KEY start_date (start_date),
@@ -29,13 +31,13 @@ class GRT_Booking_DB {
 		dbDelta( $sql );
 
 		// Add option for DB version if needed later
-		add_option( 'grt_booking_db_version', '1.0.0' );
+		add_option( 'grt_booking_db_version', '1.0.1' );
 	}
 
 	/**
 	 * Insert availability range.
 	 */
-	public static function insert_availability( $start_date, $end_date, $status = 'available' ) {
+	public static function insert_availability( $start_date, $end_date, $status = 'available', $email = '', $phone = '' ) {
 		global $wpdb;
 		$table_name = $wpdb->prefix . GRT_BOOKING_DB_TABLE;
 
@@ -45,8 +47,10 @@ class GRT_Booking_DB {
 				'start_date' => $start_date,
 				'end_date'   => $end_date,
 				'status'     => $status,
+				'email'      => $email,
+				'phone'      => $phone,
 			),
-			array( '%s', '%s', '%s' )
+			array( '%s', '%s', '%s', '%s', '%s' )
 		);
 	}
 

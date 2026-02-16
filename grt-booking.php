@@ -39,6 +39,11 @@ function run_grt_booking() {
 		$plugin_admin->init();
 	}
 
+	// Check DB version and update if needed
+	if ( get_option( 'grt_booking_db_version' ) !== '1.0.1' ) {
+		GRT_Booking_DB::install();
+	}
+
 	// Shortcode
 	$plugin_shortcode = new GRT_Booking_Shortcode();
 	$plugin_shortcode->init();
