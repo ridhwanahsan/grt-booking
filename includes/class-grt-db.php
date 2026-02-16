@@ -74,7 +74,7 @@ class GRT_Booking_DB {
 		$table_name = $wpdb->prefix . GRT_BOOKING_DB_TABLE;
 
 		// 1. Check if the range falls within an admin-defined 'available' slot.
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery -- Table name cannot be prepared.
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery
 		$is_within_range = $wpdb->get_var( 
 			$wpdb->prepare(
 				"SELECT COUNT(*) FROM $table_name 
@@ -85,6 +85,7 @@ class GRT_Booking_DB {
 				$check_out
 			)
 		) > 0;
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery
 
 		if ( ! $is_within_range ) {
 			return false;
@@ -93,9 +94,9 @@ class GRT_Booking_DB {
 		// 2. Check if the range overlaps with any existing 'booked' slot.
 		// Overlap condition: (StartA <= EndB) and (EndA >= StartB)
 		// Statuses that block availability: 'booked', 'pending', 'confirmed', 'completed'
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery
 		$is_booked = $wpdb->get_var( 
 			$wpdb->prepare(
-				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery -- Table name cannot be prepared.
 				"SELECT COUNT(*) FROM $table_name 
 				WHERE status IN ('booked', 'pending', 'confirmed', 'completed') 
 				AND start_date < %s 
@@ -104,6 +105,7 @@ class GRT_Booking_DB {
 				$check_in
 			)
 		) > 0;
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery
 
 		return ! $is_booked;
 	}

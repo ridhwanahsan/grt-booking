@@ -194,7 +194,8 @@ class GRT_Booking_Admin {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Message display only.
 		if ( isset( $_GET['message'] ) ) {
 			// No nonce check needed here as this is just displaying a message based on a URL parameter
-			$message = sanitize_key( $_GET['message'] );
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$message = sanitize_key( wp_unslash( $_GET['message'] ) );
 			if ( 'added' === $message ) {
 				echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Availability added.', 'grt-booking' ) . '</p></div>';
 			} elseif ( 'deleted' === $message ) {
@@ -278,7 +279,7 @@ class GRT_Booking_Admin {
 						// To silence the warning, we can't do much as it's a false positive for table names,
 						// but ensuring $table_name is derived from $wpdb->prefix is the correct way.
 						
-						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery -- Table name cannot be prepared, custom table query.
+						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table name cannot be prepared, custom table query.
 						$results = $wpdb->get_results( "SELECT * FROM $table_name ORDER BY start_date DESC" );
 
 						if ( $results ) {
@@ -336,11 +337,11 @@ class GRT_Booking_Admin {
 				array( '%s', '%s', '%s' )
 			);
 			
-			wp_redirect( admin_url( 'admin.php?page=grt-booking&tab=availability&message=added' ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=grt-booking&tab=availability&message=added' ) );
 			exit;
 		}
 		
-		wp_redirect( admin_url( 'admin.php?page=grt-booking&tab=availability&message=error' ) );
+		wp_safe_redirect( admin_url( 'admin.php?page=grt-booking&tab=availability&message=error' ) );
 		exit;
 	}
 
@@ -440,7 +441,7 @@ class GRT_Booking_Admin {
 				
 				// Query for status != 'available'
 				// Ignoring "Unescaped parameter $table_name" warning as table names cannot be prepared.
-				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery -- Table name cannot be prepared, custom table query.
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table name cannot be prepared, custom table query.
 				$results = $wpdb->get_results( "SELECT * FROM $table_name WHERE status != 'available' ORDER BY start_date DESC" );
 
 				if ( $results ) {
