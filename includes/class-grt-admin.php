@@ -194,7 +194,7 @@ class GRT_Booking_Admin {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Message display only.
 		if ( isset( $_GET['message'] ) ) {
 			// No nonce check needed here as this is just displaying a message based on a URL parameter
-			$message = sanitize_text_field( wp_unslash( $_GET['message'] ) );
+			$message = sanitize_key( $_GET['message'] );
 			if ( 'added' === $message ) {
 				echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Availability added.', 'grt-booking' ) . '</p></div>';
 			} elseif ( 'deleted' === $message ) {
@@ -320,13 +320,12 @@ class GRT_Booking_Admin {
 		check_admin_referer( 'grt_add_availability_nonce', 'grt_nonce' );
 
 		if ( isset( $_POST['start_date'], $_POST['end_date'] ) ) {
-			$start_date = sanitize_text_field( wp_unslash( $_POST['start_date'] ) );
-			$end_date   = sanitize_text_field( wp_unslash( $_POST['end_date'] ) );
+			$start_date = sanitize_text_field( $_POST['start_date'] );
+			$end_date   = sanitize_text_field( $_POST['end_date'] );
 
 			global $wpdb;
 			$table_name = $wpdb->prefix . 'grt_booking_availability';
 			
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery -- Custom table insert.
 			$wpdb->insert(
 				$table_name,
 				array(
@@ -361,7 +360,6 @@ class GRT_Booking_Admin {
 			global $wpdb;
 			$table_name = $wpdb->prefix . 'grt_booking_availability';
 			
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery -- Custom table delete.
 			$wpdb->delete(
 				$table_name,
 				array( 'id' => $id ),
@@ -441,7 +439,7 @@ class GRT_Booking_Admin {
 				
 				// Query for status != 'available'
 				// Ignoring "Unescaped parameter $table_name" warning as table names cannot be prepared.
-				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table name cannot be prepared, custom table query.
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery -- Table name cannot be prepared, custom table query.
 				$results = $wpdb->get_results( "SELECT * FROM $table_name WHERE status != 'available' ORDER BY start_date DESC" );
 
 				if ( $results ) {
